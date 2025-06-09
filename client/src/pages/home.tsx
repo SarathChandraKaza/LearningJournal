@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime, truncateText } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 import type { EntryWithTags } from "@shared/schema";
 
 const tagColors = [
@@ -28,6 +29,39 @@ function getTagColor(tagName: string) {
 export default function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const { toast } = useToast();
+
+  // Export functionality
+  const exportData = () => {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      totalEntries: entries.length,
+      entries: entries.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags.map(tag => tag.name),
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+      }))
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `learning-journal-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: "Your journal data has been downloaded",
+    });
+  };
 
   // Fetch entries based on search query
   const { data: entries = [], isLoading, error } = useQuery<EntryWithTags[]>({
@@ -83,6 +117,15 @@ export default function Home() {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/tags">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                >
+                  <TagIcon className="h-5 w-5" />
+                </Button>
+              </Link>
               <Link href="/streak">
                 <Button
                   variant="ghost"
@@ -92,6 +135,14 @@ export default function Home() {
                   <TrendingUp className="h-5 w-5" />
                 </Button>
               </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={exportData}
+              >
+                <Download className="h-5 w-5" />
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"
