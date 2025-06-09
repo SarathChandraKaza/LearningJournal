@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "wouter";
-import { Plus, Search, Calendar, Tag as TagIcon } from "lucide-react";
+import { Plus, Search, Calendar, Tag as TagIcon, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -82,14 +82,25 @@ export default function Home() {
                 {entries.length} {entries.length === 1 ? "entry" : "entries"}
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => setIsSearchVisible(!isSearchVisible)}
-            >
-              <Search className="h-5 w-5" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link href="/streak">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground hover:bg-primary-foreground/20"
+                >
+                  <TrendingUp className="h-5 w-5" />
+                </Button>
+              </Link>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => setIsSearchVisible(!isSearchVisible)}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
           
           {/* Search Bar */}
