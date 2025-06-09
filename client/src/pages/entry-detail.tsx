@@ -1,7 +1,7 @@
 import { useParams } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { ArrowLeft, Edit, Trash, Calendar, Clock } from "lucide-react";
+import { ArrowLeft, Edit, Trash, Calendar, Clock, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +47,47 @@ export default function EntryDetail() {
       return response.json();
     },
   });
+
+  const { data: allEntries = [] } = useQuery<EntryWithTags[]>({
+    queryKey: ["/api/entries"],
+  });
+
+  // Find current entry index and get next/previous entries
+  const currentIndex = allEntries.findIndex(e => e.id === entryId);
+  const previousEntry = currentIndex > 0 ? allEntries[currentIndex - 1] : null;
+  const nextEntry = currentIndex < allEntries.length - 1 ? allEntries[currentIndex + 1] : null;
+
+  // Export functionality
+  const exportData = () => {
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      totalEntries: allEntries.length,
+      entries: allEntries.map(entry => ({
+        id: entry.id,
+        title: entry.title,
+        content: entry.content,
+        tags: entry.tags.map(tag => tag.name),
+        createdAt: entry.createdAt,
+        updatedAt: entry.updatedAt,
+      }))
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `learning-journal-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Export Complete",
+      description: "Your journal data has been downloaded",
+    });
+  };
 
   const deleteEntryMutation = useMutation({
     mutationFn: async () => {
@@ -144,56 +185,93 @@ export default function EntryDetail() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-primary text-primary-foreground px-4 py-4 shadow-lg">
-        <div className="max-w-md mx-auto flex items-center justify-between">
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="mr-3 text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => setLocation("/")}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="text-xl font-semibold">Entry Details</h1>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-primary-foreground hover:bg-primary-foreground/20"
-              onClick={() => setLocation(`/edit/${entryId}`)}
-            >
-              <Edit className="h-5 w-5" />
-            </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-primary-foreground hover:bg-primary-foreground/20"
-                >
-                  <Trash className="h-5 w-5" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Delete Entry</DialogTitle>
-                  <DialogDescription>
-                    Are you sure you want to delete this entry? This action cannot be undone.
-                  </DialogDescription>
-                </DialogHeader>
-                <DialogFooter>
-                  <Button variant="outline">Cancel</Button>
+        <div className="max-w-md mx-auto">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="mr-3 text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => setLocation("/")}
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="text-xl font-semibold">Entry Details</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={exportData}
+              >
+                <Download className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground hover:bg-primary-foreground/20"
+                onClick={() => setLocation(`/edit/${entryId}`)}
+              >
+                <Edit className="h-5 w-5" />
+              </Button>
+              <Dialog>
+                <DialogTrigger asChild>
                   <Button
-                    variant="destructive"
-                    onClick={() => deleteEntryMutation.mutate()}
-                    disabled={deleteEntryMutation.isPending}
+                    variant="ghost"
+                    size="icon"
+                    className="text-primary-foreground hover:bg-primary-foreground/20"
                   >
-                    {deleteEntryMutation.isPending ? "Deleting..." : "Delete"}
+                    <Trash className="h-5 w-5" />
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete Entry</DialogTitle>
+                    <DialogDescription>
+                      Are you sure you want to delete this entry? This action cannot be undone.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter>
+                    <Button variant="outline">Cancel</Button>
+                    <Button
+                      variant="destructive"
+                      onClick={() => deleteEntryMutation.mutate()}
+                      disabled={deleteEntryMutation.isPending}
+                    >
+                      {deleteEntryMutation.isPending ? "Deleting..." : "Delete"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          
+          {/* Navigation Controls */}
+          <div className="flex items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => previousEntry && setLocation(`/entry/${previousEntry.id}`)}
+              disabled={!previousEntry}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
+            </Button>
+            <span className="text-primary-foreground/80 text-sm">
+              {currentIndex + 1} of {allEntries.length}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-primary-foreground hover:bg-primary-foreground/20"
+              onClick={() => nextEntry && setLocation(`/entry/${nextEntry.id}`)}
+              disabled={!nextEntry}
+            >
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
           </div>
         </div>
       </header>

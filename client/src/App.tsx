@@ -8,6 +8,7 @@ import AddEntry from "@/pages/add-entry";
 import EntryDetail from "@/pages/entry-detail";
 import EditEntry from "@/pages/edit-entry";
 import Streak from "@/pages/streak";
+import Tags from "@/pages/tags";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/entry/:id" component={EntryDetail} />
       <Route path="/edit/:id" component={EditEntry} />
       <Route path="/streak" component={Streak} />
+      <Route path="/tags" component={Tags} />
       <Route component={NotFound} />
     </Switch>
   );
