@@ -66,13 +66,37 @@ export class DatabaseStorage implements IStorage {
         })
         .returning();
 
-      // Get or create tags
-      const entryTags = await this.getOrCreateTags(tagNames);
+      // Get or create tags (need to call this outside transaction)
+      const tagList: Tag[] = [];
+      if (tagNames.length > 0) {
+        const normalizedNames = tagNames.map(name => name.toLowerCase().trim()).filter(name => name);
+        if (normalizedNames.length > 0) {
+          // Find existing tags
+          const existingTags = await tx.select().from(tags).where(
+            inArray(tags.name, normalizedNames)
+          );
+
+          // Find which tags need to be created
+          const existingTagNames = existingTags.map(tag => tag.name.toLowerCase());
+          const newTagNames = normalizedNames.filter(name => !existingTagNames.includes(name));
+
+          // Create new tags
+          const newTags = [];
+          if (newTagNames.length > 0) {
+            const insertedTags = await tx.insert(tags).values(
+              newTagNames.map(name => ({ name }))
+            ).returning();
+            newTags.push(...insertedTags);
+          }
+
+          tagList.push(...existingTags, ...newTags);
+        }
+      }
 
       // Create entry-tag relationships
-      if (entryTags.length > 0) {
+      if (tagList.length > 0) {
         await tx.insert(entryTags).values(
-          entryTags.map(tag => ({
+          tagList.map(tag => ({
             entryId: newEntry.id,
             tagId: tag.id,
           }))
@@ -81,7 +105,7 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...newEntry,
-        tags: entryTags,
+        tags: tagList,
       };
     });
   }
@@ -101,13 +125,37 @@ export class DatabaseStorage implements IStorage {
       // Delete existing entry-tag relationships
       await tx.delete(entryTags).where(eq(entryTags.entryId, id));
 
-      // Get or create tags
-      const newTags = await this.getOrCreateTags(tagNames);
+      // Get or create tags within transaction
+      const tagList: Tag[] = [];
+      if (tagNames.length > 0) {
+        const normalizedNames = tagNames.map(name => name.toLowerCase().trim()).filter(name => name);
+        if (normalizedNames.length > 0) {
+          // Find existing tags
+          const existingTags = await tx.select().from(tags).where(
+            inArray(tags.name, normalizedNames)
+          );
+
+          // Find which tags need to be created
+          const existingTagNames = existingTags.map(tag => tag.name.toLowerCase());
+          const newTagNames = normalizedNames.filter(name => !existingTagNames.includes(name));
+
+          // Create new tags
+          const newTags = [];
+          if (newTagNames.length > 0) {
+            const insertedTags = await tx.insert(tags).values(
+              newTagNames.map(name => ({ name }))
+            ).returning();
+            newTags.push(...insertedTags);
+          }
+
+          tagList.push(...existingTags, ...newTags);
+        }
+      }
 
       // Create new entry-tag relationships
-      if (newTags.length > 0) {
+      if (tagList.length > 0) {
         await tx.insert(entryTags).values(
-          newTags.map(tag => ({
+          tagList.map(tag => ({
             entryId: id,
             tagId: tag.id,
           }))
@@ -116,7 +164,7 @@ export class DatabaseStorage implements IStorage {
 
       return {
         ...updatedEntry,
-        tags: newTags,
+        tags: tagList,
       };
     });
   }
