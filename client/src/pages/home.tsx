@@ -101,7 +101,7 @@ export default function Home() {
                   placeholder="Search entries or tags..."
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
-                  className="pl-10 bg-primary-foreground/10 border-primary-foreground/20 text-primary-foreground placeholder:text-primary-foreground/60"
+                  className="pl-10 bg-white/90 border-primary-foreground/30 text-gray-900 placeholder:text-gray-600 focus:bg-white"
                 />
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-primary-foreground/60" />
               </div>
