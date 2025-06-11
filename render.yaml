@@ -3,7 +3,13 @@ services:
     name: learning-journal
     runtime: node
     plan: free
-    buildCommand: npm install && npm run build
+    buildCommand: |
+      npm install
+      cd client
+      npm install
+      npm run build
+      cd ..
+      npm run build   # this should build the server-side code (if needed)
     startCommand: npm run start
     envVars:
       - key: NODE_ENV
