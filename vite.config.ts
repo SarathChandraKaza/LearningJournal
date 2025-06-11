@@ -24,14 +24,20 @@ export default defineConfig({
     },
   },
   root: path.resolve(import.meta.dirname, "client"),
-  build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
-    emptyOutDir: true,
-  },
+
+  // 🟨 CHANGE: Output directly to dist/ for GitHub Pages
+ build: {
+  outDir: path.resolve(import.meta.dirname, "dist"),
+  emptyOutDir: true,
+},
+
   server: {
     fs: {
       strict: true,
       deny: ["**/.*"],
     },
   },
+
+  // 🟨 ADD base if deploying to a repo (important)
+  base: "/LearningJournal/",  // Replace with your GitHub repo name
 });
